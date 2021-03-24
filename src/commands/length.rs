@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::*;
 use num_bigint::BigInt;
 
 // Length command

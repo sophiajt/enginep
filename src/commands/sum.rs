@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::*;
 
 // Sum command
 pub struct SumCommand;

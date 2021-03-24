@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::*;
 
 // Prepend command
 pub struct PrependCommand;

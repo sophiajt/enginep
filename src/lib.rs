@@ -1,3 +1,8 @@
+mod commands;
+pub use commands::*;
+
+mod par_iter_adapter;
+
 use num_bigint::BigInt;
 
 pub struct CommandArgs {

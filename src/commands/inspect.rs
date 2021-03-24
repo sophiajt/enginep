@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::*;
 
 // Take command
 pub struct InspectCommand;

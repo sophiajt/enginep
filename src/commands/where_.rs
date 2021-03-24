@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::*;
 // Where command
 pub struct WhereCommand;
 

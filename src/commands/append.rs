@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::*;
 
 // Append command
 pub struct AppendCommand;
