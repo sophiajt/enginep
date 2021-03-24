@@ -66,16 +66,16 @@ fn main() {
             args: vec![Value::SmallInt(777)],
         },
         // CallInfo {
-        //     name: "par-each".into(),
+        //     name: "where".into(),
         //     args: vec![Value::SmallInt(7)],
         // },
         CallInfo {
-            name: "where".into(),
-            args: vec![Value::SmallInt(7)],
+            name: "par-each".into(),
+            args: vec![Value::SmallInt(10), Value::SmallInt(12)],
         },
         CallInfo {
-            name: "par-each".into(),
-            args: vec![Value::SmallInt(10), Value::SmallInt(4)],
+            name: "take".into(),
+            args: vec![Value::SmallInt(100)],
         },
         // CallInfo {
         //     name: "length".into(),

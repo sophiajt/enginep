@@ -8,24 +8,11 @@ pub struct CommandArgs {
 
 pub struct State;
 
-// #[derive(Debug, Clone)]
-// pub struct Range {
-//     start: Value,
-//     end: Value,
-// }
-
-// impl Range {
-//     fn new(start: Value, end: Value) -> Self {
-//         Self { start, end }
-//     }
-// }
-
 #[derive(Debug, Clone)]
 pub enum Value {
     BigInt(BigInt),
     SmallInt(i64),
     Bool(bool),
-    // Range(Box<Range>),
 }
 
 impl Value {

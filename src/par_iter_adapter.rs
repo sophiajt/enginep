@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::lib::Value;
 use crate::lib::ValueIterator;
 use rayon::prelude::*;
@@ -8,7 +10,7 @@ pub struct PartitionedParallelIterator {
     number_of_workers: usize,
     input: ValueIterator,
 
-    completed_batch: Vec<Value>,
+    completed_batch: VecDeque<Value>,
 }
 
 impl PartitionedParallelIterator {
@@ -23,7 +25,7 @@ impl PartitionedParallelIterator {
             number_per_worker,
             number_of_workers,
             input,
-            completed_batch: vec![],
+            completed_batch: VecDeque::new(),
         }
     }
 }
@@ -52,9 +54,9 @@ impl Iterator for PartitionedParallelIterator {
                 dataset.push(per_worker_data);
             }
 
-            let results: Vec<Value> = dataset
+            let results: VecDeque<Value> = dataset
                 .into_par_iter()
-                .flat_map(|per_worker_dataset| {
+                .flat_map_iter(|per_worker_dataset| {
                     let output: Vec<_> = per_worker_dataset
                         .into_iter()
                         .filter_map(|x| (self.filter_map_fn)(x))
@@ -67,6 +69,6 @@ impl Iterator for PartitionedParallelIterator {
             self.completed_batch = results;
         }
 
-        self.completed_batch.pop()
+        self.completed_batch.pop_front()
     }
 }
