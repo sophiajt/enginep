@@ -47,6 +47,7 @@ fn main() {
     map.insert("where".into(), command(WhereCommand));
     map.insert("length".into(), command(LengthCommand));
     map.insert("par-each".into(), command(ParEachCommand));
+    map.insert("inspect".into(), command(InspectCommand));
 
     let pipeline = vec![
         CallInfo {
@@ -77,6 +78,7 @@ fn main() {
             name: "take".into(),
             args: vec![Value::SmallInt(100)],
         },
+        CallInfo { name: "inspect".into(), args: vec![]}
         // CallInfo {
         //     name: "length".into(),
         //     args: vec![],
@@ -101,7 +103,7 @@ fn main() {
 
         // println!("result: {:?}", result);
 
-        let result: Vec<_> = pipeline.collect();
-        println!("{:?}", result);
+        let _: Vec<_> = pipeline.collect();
+        // println!("{:?}", result);
     }
 }

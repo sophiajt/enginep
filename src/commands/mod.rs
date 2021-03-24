@@ -1,5 +1,6 @@
 mod append;
 mod count;
+mod inspect;
 mod length;
 mod par_each;
 mod prepend;
@@ -9,6 +10,7 @@ mod where_;
 
 pub use append::AppendCommand;
 pub use count::CountCommand;
+pub use inspect::InspectCommand;
 pub use length::LengthCommand;
 pub use par_each::ParEachCommand;
 pub use prepend::PrependCommand;
