@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
-use crate::Value;
 use crate::ValueIterator;
+use nu_protocol::Value;
 use rayon::prelude::*;
 
 pub struct PartitionedParallelIterator {
