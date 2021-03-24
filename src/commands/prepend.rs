@@ -1,6 +1,5 @@
 use crate::*;
 
-// Prepend command
 pub struct PrependCommand;
 
 impl PipelineElement for PrependCommand {

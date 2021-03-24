@@ -34,7 +34,6 @@ impl Iterator for PartitionedParallelIterator {
     type Item = Value;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // FIXME: do we want to pop?
         if self.completed_batch.is_empty() {
             // There are no completed items to send, so let's work on the next batch
 

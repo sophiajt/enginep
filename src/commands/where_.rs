@@ -1,5 +1,5 @@
 use crate::*;
-// Where command
+
 pub struct WhereCommand;
 
 impl PipelineElement for WhereCommand {

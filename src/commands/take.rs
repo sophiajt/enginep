@@ -1,6 +1,5 @@
 use crate::*;
 
-// Take command
 pub struct TakeCommand;
 
 impl PipelineElement for TakeCommand {

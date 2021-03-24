@@ -1,6 +1,6 @@
 use crate::*;
 
-// Count command (counts from 0 to the highest it can)
+// Counts from 0 to the highest it can
 pub struct CountCommand;
 
 impl PipelineElement for CountCommand {

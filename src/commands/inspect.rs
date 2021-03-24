@@ -1,6 +1,5 @@
 use crate::*;
 
-// Take command
 pub struct InspectCommand;
 
 impl PipelineElement for InspectCommand {

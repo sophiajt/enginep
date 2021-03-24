@@ -1,7 +1,6 @@
 use crate::*;
 use num_bigint::BigInt;
 
-// Length command
 pub struct LengthCommand;
 
 impl PipelineElement for LengthCommand {

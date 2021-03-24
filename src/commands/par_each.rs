@@ -2,7 +2,6 @@ use crate::*;
 
 use crate::par_iter_adapter::PartitionedParallelIterator;
 
-// Par-each command
 pub struct ParEachCommand;
 
 impl PipelineElement for ParEachCommand {

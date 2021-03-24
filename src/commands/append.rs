@@ -1,6 +1,5 @@
 use crate::*;
 
-// Append command
 pub struct AppendCommand;
 
 impl PipelineElement for AppendCommand {

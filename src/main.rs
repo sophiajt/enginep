@@ -42,36 +42,49 @@ fn main() {
     map.insert("length".into(), command(LengthCommand));
     map.insert("par-each".into(), command(ParEachCommand));
     map.insert("inspect".into(), command(InspectCommand));
+    map.insert("contains".into(), command(ContainsCommand));
+    map.insert("open".into(), command(OpenCommand));
+    map.insert("str length".into(), command(StrLengthCommand));
 
     let pipeline = vec![
         CallInfo {
-            name: "count".into(),
-            args: vec![],
+            name: "open".into(),
+            args: vec![Value::String("../lugar_cantones.inec.json".into())]
         },
-        CallInfo {
-            name: "take".into(),
-            args: vec![Value::SmallInt(count)],
-        },
-        CallInfo {
-            name: "append".into(),
-            args: vec![Value::SmallInt(555)],
-        },
-        CallInfo {
-            name: "prepend".into(),
-            args: vec![Value::SmallInt(777)],
-        },
+
+        // CallInfo {
+        //     name: "count".into(),
+        //     args: vec![],
+        // },
+        // CallInfo {
+        //     name: "take".into(),
+        //     args: vec![Value::SmallInt(count)],
+        // },
+        // CallInfo {
+        //     name: "append".into(),
+        //     args: vec![Value::SmallInt(555)],
+        // },
+        // CallInfo {
+        //     name: "prepend".into(),
+        //     args: vec![Value::SmallInt(777)],
+        // },
         // CallInfo {
         //     name: "where".into(),
         //     args: vec![Value::SmallInt(7)],
         // },
-        CallInfo {
-            name: "par-each".into(),
-            args: vec![Value::SmallInt(10), Value::SmallInt(12)],
-        },
-        CallInfo {
-            name: "take".into(),
-            args: vec![Value::SmallInt(100)],
-        },
+        // CallInfo {
+        //     name: "par-each".into(),
+        //     args: vec![Value::SmallInt(10), Value::SmallInt(12)],
+        // },
+        // CallInfo {
+        //     name: "take".into(),
+        //     args: vec![Value::SmallInt(100)],
+        // },
+        // CallInfo {
+        //     name: "contains".into(),
+        //     args: vec![Value::SmallInt(100)],
+        // },
+        CallInfo { name: "str length".into(), args: vec![]},
         CallInfo { name: "inspect".into(), args: vec![]}
         // CallInfo {
         //     name: "length".into(),

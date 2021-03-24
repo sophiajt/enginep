@@ -1,31 +1,35 @@
 use crate::*;
 
-pub struct SumCommand;
+pub struct ContainsCommand;
 
-impl PipelineElement for SumCommand {
+impl PipelineElement for ContainsCommand {
     fn start(&self, args: CommandArgs) -> ValueIterator {
-        Box::new(SumIterator {
+        let item = args.args[0].clone();
+
+        Box::new(ContainsIterator {
             input: args.input,
+            item,
             done: false,
         })
     }
 }
 
-struct SumIterator {
+pub struct ContainsIterator {
     input: ValueIterator,
+    item: Value,
     done: bool,
 }
 
-impl Iterator for SumIterator {
+impl Iterator for ContainsIterator {
     type Item = Value;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.done {
             return None;
         }
-        let input = &mut self.input;
-        let result = input.fold(Value::SmallInt(0), |a, b| a.add(&b));
+
         self.done = true;
-        Some(result)
+        let item = self.item.clone();
+        self.input.find(|x| x == &item)
     }
 }
