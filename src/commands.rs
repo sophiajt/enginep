@@ -1,4 +1,5 @@
 use crate::lib::*;
+use crate::par_iter_adapter::PartitionedParallelIterator;
 
 use num_bigint::BigInt;
 
@@ -216,98 +217,22 @@ impl Iterator for WhereIterator {
     }
 }
 
-// // ParEach command
-// pub struct ParEachCommand;
+// Par each command
 
-// impl PipelineElement for ParEachCommand {
-//     fn start(&self, args: CommandArgs) -> ValueIterator {
-//         // use rayon::prelude::*;
-//         // use std::sync::mpsc::channel;
+pub struct ParEachCommand;
 
-//         // let pred = args.args[0].clone();
-
-//         // Box::new(
-//         //     args.input
-//         //         .chunks(10)
-//         //         .into_iter()
-//         //         .map(move |x| {
-//         //             let chunk: Vec<_> = x.collect();
-
-//         //             let results: Vec<_> = chunk
-//         //                 .into_iter()
-//         //                 .par_bridge()
-//         //                 .filter(|x| pred.lt(&x))
-//         //                 .collect();
-//         //         })
-//         //         .flatten(),
-//         // )
-
-//         // let (send, recv) = channel();
-
-//         // args.input
-//         //     .par_bridge()
-//         //     .for_each_with(send, |s, x| s.send(x).unwrap());
-
-//         // Box::new(ParEachIterator {
-//         //     input: Box::new(recv.into_iter()),
-//         // })
-
-//         // let iter = ParEachIterator { input: args.input };
-
-//         // let pred = args.args[0].clone();
-
-//         // Box::new(iter.par_bridge().map(|x| pred.lt(&x)).)
-
-//         Box::new(ParEachIterator {
-//             input: args.input,
-//             batch: None,
-//         })
-//     }
-// }
-
-// struct ParEachIterator {
-//     //input: ValueIterator,
-//     input: ValueIterator,
-//     batch: Option<Vec<Value>>,
-// }
-
-// impl Iterator for ParEachIterator {
-//     type Item = Value;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         if self.batch.is_none() {
-//             let mut new_batch = vec![];
-
-//             for _ in 0..10 {
-//                 if let Some(x) = self.input.next() {
-//                     new_batch.push(x)
-//                 }
-//             }
-
-//             if !new_batch.is_empty() {
-//                 self.batch = Some(new_batch);
-//             }
-//         }
-
-//         if let Some(batch) = &mut self.batch {
-//             assert!(!batch.is_empty());
-
-//             if let Some(v) = batch.pop() {
-//                 return Some(v);
-//             }
-
-//             if batch.is_empty() {
-//                 self.batch = None;
-//             }
-//         }
-//         None
-//         // while let Some(next) = self.input.next() {
-
-//         //     // if self.pred.lt(&next) {
-//         //     //     return Some(next);
-//         //     // }
-//         // }
-
-//         // None
-//     }
-// }
+impl PipelineElement for ParEachCommand {
+    fn start(&self, args: CommandArgs) -> ValueIterator {
+        match (args.args.get(0), args.args.get(1)) {
+            (Some(Value::SmallInt(per_worker)), Some(Value::SmallInt(num_workers))) => {
+                Box::new(PartitionedParallelIterator::new(
+                    Box::new(|x| Some(x)),
+                    *per_worker as usize,
+                    *num_workers as usize,
+                    args.input,
+                ))
+            }
+            _ => Box::new(std::iter::empty()),
+        }
+    }
+}

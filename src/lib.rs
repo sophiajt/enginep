@@ -55,7 +55,7 @@ impl Value {
 
 trait NewTrait: Iterator<Item = Value> + Clone {}
 
-pub type ValueIterator = Box<dyn Iterator<Item = Value> + Send>;
+pub type ValueIterator = Box<dyn Iterator<Item = Value> + Send + Sync>;
 
 pub trait PipelineElement {
     fn start(&self, args: CommandArgs) -> ValueIterator;

@@ -4,6 +4,8 @@ use lib::*;
 mod commands;
 use commands::*;
 
+mod par_iter_adapter;
+
 use std::collections::HashMap;
 
 struct CallInfo {
@@ -44,7 +46,7 @@ fn main() {
     map.insert("prepend".into(), command(PrependCommand));
     map.insert("where".into(), command(WhereCommand));
     map.insert("length".into(), command(LengthCommand));
-    // map.insert("par-each".into(), command(ParEachCommand));
+    map.insert("par-each".into(), command(ParEachCommand));
 
     let pipeline = vec![
         CallInfo {
@@ -72,9 +74,13 @@ fn main() {
             args: vec![Value::SmallInt(7)],
         },
         CallInfo {
-            name: "length".into(),
-            args: vec![],
-        }
+            name: "par-each".into(),
+            args: vec![Value::SmallInt(10), Value::SmallInt(4)],
+        },
+        // CallInfo {
+        //     name: "length".into(),
+        //     args: vec![],
+        // }
         // CallInfo {
         //     name: "sum".into(),
         //     args: vec![],
