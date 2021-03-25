@@ -1,16 +1,27 @@
 use std::collections::HashMap;
 
 use enginep::*;
+use nu_errors::ShellError;
 
-fn main() {
+fn main() -> Result<(), ShellError> {
     let fname = std::env::args().skip(1).next().unwrap();
     let file_contents = std::fs::read_to_string(fname).unwrap();
     let scope = Scope::new();
     scope.add_command("let".into(), command(Let));
+    scope.add_command("echo".into(), command(Echo));
+    let ctx = EvaluationContext::basic();
 
-    let output = nu_parser::parse(&file_contents, 0, &scope);
+    let (block, errors) = nu_parser::parse(&file_contents, 0, &scope);
 
-    println!("{:#?}\nERROR:{:?}", output.0, output.1);
+    println!("{:#?}\nERROR:{:?}", block, errors);
+
+    let output = run_block(&block, &ctx, &scope, empty_value_iterator())?;
+
+    let output: Vec<_> = output.collect();
+
+    println!("output: {:?}", output);
+
+    Ok(())
 }
 
 // struct CallInfo {

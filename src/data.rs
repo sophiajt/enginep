@@ -1,4 +1,44 @@
+use std::sync::{atomic::AtomicBool, Arc};
+
 use nu_protocol::Value;
+
+pub struct InterruptibleIterator {
+    inner: ValueIterator,
+    interrupt_signal: Arc<AtomicBool>,
+}
+
+impl InterruptibleIterator {
+    pub fn new<S>(inner: S, interrupt_signal: Arc<AtomicBool>) -> InterruptibleIterator
+    where
+        S: Iterator<Item = Value> + Send + Sync + 'static,
+    {
+        InterruptibleIterator {
+            inner: Box::new(inner),
+            interrupt_signal,
+        }
+    }
+}
+
+impl Iterator for InterruptibleIterator {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next()
+    }
+}
+
+pub trait Interruptible {
+    fn interruptible(self, ctrl_c: Arc<AtomicBool>) -> InterruptibleIterator;
+}
+
+impl<S> Interruptible for S
+where
+    S: Iterator<Item = Value> + Send + Sync + 'static,
+{
+    fn interruptible(self, ctrl_c: Arc<AtomicBool>) -> InterruptibleIterator {
+        InterruptibleIterator::new(self, ctrl_c)
+    }
+}
 
 // pub struct CommandArgs {
 //     pub input: ValueIterator,

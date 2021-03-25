@@ -1,6 +1,8 @@
+mod autoview;
 // mod append;
 // mod contains;
 // mod count;
+mod echo;
 // mod inspect;
 // mod length;
 mod let_;
@@ -17,6 +19,8 @@ mod let_;
 // pub use count::CountCommand;
 // pub use inspect::InspectCommand;
 // pub use length::LengthCommand;
+pub use autoview::Autoview;
+pub use echo::Echo;
 pub use let_::Let;
 // pub use open::OpenCommand;
 // pub use par_each::ParEachCommand;

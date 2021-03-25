@@ -6,8 +6,8 @@ use nu_errors::ShellError;
 use nu_protocol::hir;
 use nu_source::Tag;
 use parking_lot::Mutex;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::{collections::HashMap, sync::atomic::AtomicBool};
 
 #[derive(Clone)]
 pub struct EvaluationContext {
@@ -20,6 +20,14 @@ pub struct EvaluationContext {
 }
 
 impl EvaluationContext {
+    pub fn basic() -> EvaluationContext {
+        EvaluationContext {
+            ctrl_c: Arc::new(AtomicBool::from(false)),
+            current_errors: Arc::new(parking_lot::Mutex::new(vec![])),
+            user_recently_used_autoenv_untrust: Arc::new(AtomicBool::from(false)),
+            windows_drives_previous_cwd: Arc::new(parking_lot::Mutex::new(HashMap::new())),
+        }
+    }
     pub fn from_args(args: &CommandArgs) -> EvaluationContext {
         EvaluationContext {
             current_errors: args.current_errors.clone(),
