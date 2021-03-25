@@ -47,11 +47,14 @@ pub struct CommandArgs {
 }
 
 impl CommandArgs {
-    pub fn evaluate_once(self) -> Result<EvaluatedWholeStreamCommandArgs, ShellError> {
+    pub fn evaluate_once(
+        self,
+        scope: &Scope,
+    ) -> Result<EvaluatedWholeStreamCommandArgs, ShellError> {
         let ctx = EvaluationContext::from_args(&self);
         let ctrl_c = self.ctrl_c.clone();
         let input = self.input;
-        let call_info = self.call_info.evaluate(&ctx)?;
+        let call_info = self.call_info.evaluate(&ctx, scope)?;
 
         Ok(EvaluatedWholeStreamCommandArgs::new(
             ctrl_c, call_info, input,

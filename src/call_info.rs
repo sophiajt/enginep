@@ -2,7 +2,7 @@ use nu_errors::ShellError;
 use nu_protocol::{hir, CallInfo};
 use nu_source::Tag;
 
-use crate::evaluate::{evaluate_args, EvaluationContext};
+use crate::evaluate::{evaluate_args, EvaluationContext, Scope};
 
 #[derive(Clone)]
 pub struct UnevaluatedCallInfo {
@@ -11,8 +11,8 @@ pub struct UnevaluatedCallInfo {
 }
 
 impl UnevaluatedCallInfo {
-    pub fn evaluate(self, ctx: &EvaluationContext) -> Result<CallInfo, ShellError> {
-        let args = evaluate_args(&self.args, ctx)?;
+    pub fn evaluate(self, ctx: &EvaluationContext, scope: &Scope) -> Result<CallInfo, ShellError> {
+        let args = evaluate_args(&self.args, ctx, scope)?;
 
         Ok(CallInfo {
             args,

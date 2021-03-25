@@ -1,5 +1,6 @@
+use crate::apply_operator;
 use crate::evaluate::evaluation_context::EvaluationContext;
-use crate::{apply_operator, Scope};
+use crate::evaluate::Scope;
 use crate::{empty_value_iterator, evaluate::block::run_block};
 use indexmap::IndexMap;
 use nu_errors::{ArgumentError, ShellError};
@@ -12,10 +13,12 @@ use nu_protocol::{
     ColumnPath, Primitive, RangeInclusion, UnspannedPathMember, UntaggedValue, Value,
 };
 use nu_source::{Span, SpannedItem, Tag};
+use nu_value_ext::ValueExt;
 
 pub fn evaluate_baseline_expr(
     expr: &SpannedExpression,
     ctx: &EvaluationContext,
+    scope: &Scope,
 ) -> Result<Value, ShellError> {
     let tag = Tag {
         span: expr.span,
@@ -32,14 +35,14 @@ pub fn evaluate_baseline_expr(
         Expression::Synthetic(hir::Synthetic::String(s)) => {
             Ok(UntaggedValue::string(s).into_untagged_value())
         }
-        Expression::Variable(var, _) => evaluate_reference(&var, ctx, tag),
+        Expression::Variable(var, _) => evaluate_reference(&var, ctx, scope, tag),
         Expression::Command => unimplemented!(),
-        Expression::Invocation(block) => evaluate_invocation(block, ctx),
+        Expression::Invocation(block) => evaluate_invocation(block, ctx, scope),
         Expression::ExternalCommand(_) => unimplemented!(),
         Expression::Binary(binary) => {
             // TODO: If we want to add short-circuiting, we'll need to move these down
-            let left = evaluate_baseline_expr(&binary.left, ctx)?;
-            let right = evaluate_baseline_expr(&binary.right, ctx)?;
+            let left = evaluate_baseline_expr(&binary.left, ctx, scope)?;
+            let right = evaluate_baseline_expr(&binary.right, ctx, scope)?;
 
             match binary.op.expr {
                 Expression::Literal(hir::Literal::Operator(op)) => {
@@ -59,13 +62,13 @@ pub fn evaluate_baseline_expr(
         }
         Expression::Range(range) => {
             let left = if let Some(left) = &range.left {
-                evaluate_baseline_expr(&left, ctx).await?
+                evaluate_baseline_expr(&left, ctx, scope)?
             } else {
                 Value::nothing()
             };
 
             let right = if let Some(right) = &range.right {
-                evaluate_baseline_expr(&right, ctx).await?
+                evaluate_baseline_expr(&right, ctx, scope)?
             } else {
                 Value::nothing()
             };
@@ -91,7 +94,7 @@ pub fn evaluate_baseline_expr(
             let mut output_headers = vec![];
 
             for expr in headers {
-                let val = evaluate_baseline_expr(&expr, ctx).await?;
+                let val = evaluate_baseline_expr(&expr, ctx, scope)?;
 
                 let header = val.as_string()?;
                 output_headers.push(header);
@@ -119,7 +122,7 @@ pub fn evaluate_baseline_expr(
 
                 let mut row_output = IndexMap::new();
                 for cell in output_headers.iter().zip(row.iter()) {
-                    let val = evaluate_baseline_expr(&cell.1, ctx).await?;
+                    let val = evaluate_baseline_expr(&cell.1, ctx, scope)?;
                     row_output.insert(cell.0.clone(), val);
                 }
                 output_table.push(UntaggedValue::row(row_output).into_value(tag.clone()));
@@ -131,7 +134,7 @@ pub fn evaluate_baseline_expr(
             let mut exprs = vec![];
 
             for expr in list {
-                let expr = evaluate_baseline_expr(&expr, ctx).await?;
+                let expr = evaluate_baseline_expr(&expr, ctx, scope)?;
                 exprs.push(expr);
             }
 
@@ -144,7 +147,7 @@ pub fn evaluate_baseline_expr(
 
             let mut captured = Dictionary::new(IndexMap::new());
             for free_variable in &free_variables {
-                if let Some(v) = ctx.scope.get_var(free_variable) {
+                if let Some(v) = scope.get_var(free_variable) {
                     captured.insert(free_variable.into(), v.clone());
                 }
             }
@@ -158,7 +161,7 @@ pub fn evaluate_baseline_expr(
             )
         }
         Expression::Path(path) => {
-            let value = evaluate_baseline_expr(&path.head, ctx).await?;
+            let value = evaluate_baseline_expr(&path.head, ctx, scope)?;
             let mut item = value;
 
             for member in &path.tail {

@@ -1,12 +1,17 @@
 use crate::{
-    empty_value_iterator, CommandArgs, EvaluationContext, Example, Scope, ValueIterator,
-    WholeStreamCommand,
+    empty_value_iterator,
+    evaluate::EvaluationContext,
+    evaluate::{evaluate_baseline_expr, Scope},
+    CommandArgs, Example, ValueIterator, WholeStreamCommand,
 };
 
 use nu_errors::ShellError;
 use nu_parser::ParserScope;
-use nu_protocol::{hir::CapturedBlock, hir::ClassifiedCommand, Signature, SyntaxShape};
-use nu_source::Tagged;
+use nu_protocol::{
+    hir::CapturedBlock, hir::ClassifiedCommand, Primitive, Signature, SyntaxShape, UntaggedValue,
+    Value,
+};
+use nu_source::{Tagged, TaggedItem};
 
 pub struct Let;
 
@@ -42,6 +47,34 @@ impl WholeStreamCommand for Let {
 pub fn letcmd(args: CommandArgs, scope: &Scope) -> Result<ValueIterator, ShellError> {
     let tag = args.call_info.name_tag.clone();
     let ctx = EvaluationContext::from_args(&args);
+
+    let args = args.evaluate_once(scope)?;
+    let name = match args.nth(0).unwrap() {
+        Value {
+            value: UntaggedValue::Primitive(Primitive::String(s)),
+            tag,
+        } => s.to_string().tagged(tag.clone()),
+        Value { tag, .. } => {
+            return Err(ShellError::labeled_error(
+                "Expected a variable name",
+                "expected a variable name",
+                tag.span,
+            ))
+        }
+    };
+    let rhs = match args.nth(2).unwrap() {
+        Value {
+            value: UntaggedValue::Block(b),
+            ..
+        } => b,
+        Value { tag, .. } => {
+            return Err(ShellError::labeled_error(
+                "Expected a block",
+                "expected a block",
+                tag.span,
+            ))
+        }
+    };
 
     // let (LetArgs { name, rhs, .. }, _) = args.process().await?;
 
@@ -79,7 +112,7 @@ pub fn letcmd(args: CommandArgs, scope: &Scope) -> Result<ValueIterator, ShellEr
     scope.enter_scope();
     scope.add_vars(&captured.entries);
 
-    let value = evaluate_baseline_expr(&expr, &ctx).await;
+    let value = evaluate_baseline_expr(&expr, &ctx, scope);
 
     scope.exit_scope();
 

@@ -6,6 +6,7 @@ fn main() {
     let fname = std::env::args().skip(1).next().unwrap();
     let file_contents = std::fs::read_to_string(fname).unwrap();
     let scope = Scope::new();
+    scope.add_command("let".into(), command(Let));
 
     let output = nu_parser::parse(&file_contents, 0, &scope);
 

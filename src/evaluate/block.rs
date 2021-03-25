@@ -1,6 +1,7 @@
+use crate::evaluate::internal::run_internal_command;
+use crate::evaluate::Scope;
 use crate::{empty_value_iterator, evaluate::expr::run_expression_block};
 use crate::{evaluate::evaluation_context::EvaluationContext, ValueIterator};
-use crate::{evaluate::internal::run_internal_command, Scope};
 use nu_errors::ShellError;
 use nu_parser::ParserScope;
 use nu_protocol::hir::{
@@ -18,12 +19,11 @@ pub fn run_block(
 ) -> Result<ValueIterator, ShellError> {
     let mut output: Result<ValueIterator, ShellError> = Ok(empty_value_iterator());
     for (_, definition) in block.definitions.iter() {
-        ctx.scope.add_definition(definition.clone());
+        scope.add_definition(definition.clone());
     }
 
     for group in &block.block {
         match output {
-            Ok(inp) if inp.is_empty() => {}
             Ok(inp) => {
                 // Run autoview on the values we've seen so far
                 // We may want to make this configurable for other kinds of hosting
@@ -47,29 +47,26 @@ pub fn run_block(
                         }
                     };
                     match output_stream.next() {
-                        Ok(Some(ReturnSuccess::Value(Value {
+                        Some(Value {
                             value: UntaggedValue::Error(e),
                             ..
-                        }))) => {
+                        }) => {
                             return Err(e);
                         }
-                        Ok(Some(_item)) => {
+                        Some(_item) => {
                             if let Some(err) = ctx.get_errors().get(0) {
                                 ctx.clear_errors();
                                 return Err(err.clone());
                             }
                             if ctx.ctrl_c.load(Ordering::SeqCst) {
-                                return Ok(InputStream::empty());
+                                return Ok(empty_value_iterator());
                             }
                         }
-                        Ok(None) => {
+                        None => {
                             if let Some(err) = ctx.get_errors().get(0) {
                                 ctx.clear_errors();
                                 return Err(err.clone());
                             }
-                        }
-                        Err(e) => {
-                            return Err(e);
                         }
                     }
                 }
@@ -81,18 +78,17 @@ pub fn run_block(
         output = Ok(empty_value_iterator());
         for pipeline in &group.pipelines {
             match output {
-                Ok(inp) if inp.is_empty() => {}
                 Ok(inp) => {
-                    let mut output_stream = inp.to_output_stream();
+                    let mut output_stream = inp;
 
-                    match output_stream.try_next() {
-                        Ok(Some(ReturnSuccess::Value(Value {
+                    match output_stream.next() {
+                        Some(Value {
                             value: UntaggedValue::Error(e),
                             ..
-                        }))) => {
+                        }) => {
                             return Err(e);
                         }
-                        Ok(Some(_item)) => {
+                        Some(_item) => {
                             if let Some(err) = ctx.get_errors().get(0) {
                                 ctx.clear_errors();
                                 return Err(err.clone());
@@ -106,14 +102,11 @@ pub fn run_block(
                                 return Ok(empty_value_iterator());
                             }
                         }
-                        Ok(None) => {
+                        None => {
                             if let Some(err) = ctx.get_errors().get(0) {
                                 ctx.clear_errors();
                                 return Err(err.clone());
                             }
-                        }
-                        Err(e) => {
-                            return Err(e);
                         }
                     }
                 }
@@ -142,7 +135,7 @@ fn run_pipeline(
                 let mut args = vec![];
                 if let Some(positional) = call.positional {
                     for pos in &positional {
-                        let result = run_expression_block(pos, ctx)?.into_vec();
+                        let result: Vec<Value> = run_expression_block(pos, ctx, scope)?.collect();
                         args.push(result);
                     }
                 }
@@ -199,11 +192,11 @@ fn run_pipeline(
                 }
             }
 
-            ClassifiedCommand::Expr(expr) => run_expression_block(&*expr, ctx)?,
+            ClassifiedCommand::Expr(expr) => run_expression_block(&*expr, ctx, scope)?,
 
             ClassifiedCommand::Error(err) => return Err(err.into()),
 
-            ClassifiedCommand::Internal(left) => run_internal_command(left, ctx, input)?,
+            ClassifiedCommand::Internal(left) => run_internal_command(left, ctx, scope, input)?,
         };
     }
 

@@ -2,6 +2,7 @@ mod commands;
 pub use commands::*;
 
 mod evaluate;
+pub use evaluate::*;
 
 mod par_iter_adapter;
 
