@@ -1,13 +1,12 @@
 use nu_errors::ShellError;
-use nu_protocol::{hir::Block, CallInfo, Value};
+use nu_parser::ParserScope;
+use nu_protocol::{hir::Block, CallInfo, UntaggedValue, Value};
 use nu_protocol::{EvaluatedArgs, Signature};
-use nu_source::Tag;
+use nu_source::{Span, Tag};
 use std::sync::Arc;
 use std::{ops::Deref, sync::atomic::AtomicBool};
 
-use crate::{
-    empty_value_iterator, evaluate::EvaluationContext, UnevaluatedCallInfo, ValueIterator,
-};
+use crate::{evaluate::EvaluationContext, run_block, UnevaluatedCallInfo, ValueIterator};
 
 use crate::evaluate::Scope;
 
@@ -173,17 +172,16 @@ impl WholeStreamCommand for Block {
     }
 
     fn run(&self, args: CommandArgs, scope: &Scope) -> Result<ValueIterator, ShellError> {
-        /*
         let call_info = args.call_info.clone();
 
         let mut block = self.clone();
         block.set_redirect(call_info.args.external_redirection);
 
         let ctx = EvaluationContext::from_args(&args);
-        let evaluated = call_info.evaluate(&ctx).await?;
+        let evaluated = call_info.evaluate(&ctx, scope)?;
 
         let input = args.input;
-        ctx.scope.enter_scope();
+        scope.enter_scope();
         if let Some(args) = evaluated.args.positional {
             let mut args_iter = args.into_iter().peekable();
             let mut params_iter = self.params.positional.iter();
@@ -194,15 +192,15 @@ impl WholeStreamCommand for Block {
                         // we just checked the peek above, so this should be infallible
                         if let Some(arg) = args_iter.next() {
                             if name.starts_with('$') {
-                                ctx.scope.add_var(name.to_string(), arg);
+                                scope.add_var(name.to_string(), arg);
                             } else {
-                                ctx.scope.add_var(format!("${}", name), arg);
+                                scope.add_var(format!("${}", name), arg);
                             }
                         }
                     }
                     (Some(arg), None) => {
                         if block.params.rest_positional.is_none() {
-                            ctx.scope.exit_scope();
+                            scope.exit_scope();
                             return Err(ShellError::labeled_error(
                                 "Unexpected argument to command",
                                 "unexpected argument",
@@ -228,7 +226,7 @@ impl WholeStreamCommand for Block {
                     0
                 };
 
-                ctx.scope.add_var(
+                scope.add_var(
                     "$rest",
                     UntaggedValue::Table(elements).into_value(Span::new(start, end)),
                 );
@@ -239,15 +237,14 @@ impl WholeStreamCommand for Block {
                 let name = named.0;
                 if let Some(value) = args.get(name) {
                     if name.starts_with('$') {
-                        ctx.scope.add_var(name, value.clone());
+                        scope.add_var(name, value.clone());
                     } else {
-                        ctx.scope.add_var(format!("${}", name), value.clone());
+                        scope.add_var(format!("${}", name), value.clone());
                     }
                 } else if name.starts_with('$') {
-                    ctx.scope
-                        .add_var(name, UntaggedValue::nothing().into_untagged_value());
+                    scope.add_var(name, UntaggedValue::nothing().into_untagged_value());
                 } else {
-                    ctx.scope.add_var(
+                    scope.add_var(
                         format!("${}", name),
                         UntaggedValue::nothing().into_untagged_value(),
                     );
@@ -257,22 +254,19 @@ impl WholeStreamCommand for Block {
             for named in &block.params.named {
                 let name = named.0;
                 if name.starts_with('$') {
-                    ctx.scope
-                        .add_var(name, UntaggedValue::nothing().into_untagged_value());
+                    scope.add_var(name, UntaggedValue::nothing().into_untagged_value());
                 } else {
-                    ctx.scope.add_var(
+                    scope.add_var(
                         format!("${}", name),
                         UntaggedValue::nothing().into_untagged_value(),
                     );
                 }
             }
         }
-        let result = run_block(&block, &ctx, input).await;
-        ctx.scope.exit_scope();
-        result.map(|x| x.to_output_stream())
-        */
+        let result = run_block(&block, &ctx, scope, input)?;
+        scope.exit_scope();
 
-        Ok(empty_value_iterator())
+        Ok(result)
     }
 
     fn is_binary(&self) -> bool {

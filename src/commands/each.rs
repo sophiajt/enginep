@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    empty_value_iterator, par_iter_adapter::PartitionedParallelIterator, run_block, CommandArgs,
-    EvaluationContext, Example, ValueIterator,
+    empty_value_iterator, run_block, CommandArgs, EvaluationContext, Example, ValueIterator,
 };
 use crate::{Scope, WholeStreamCommand};
 
@@ -12,15 +11,15 @@ use nu_protocol::{
     hir::CapturedBlock, Signature, SyntaxShape, TaggedDictBuilder, UntaggedValue, Value,
 };
 
-pub struct ParEach;
+pub struct Each;
 
-impl WholeStreamCommand for ParEach {
+impl WholeStreamCommand for Each {
     fn name(&self) -> &str {
-        "par-each"
+        "each"
     }
 
     fn signature(&self) -> Signature {
-        Signature::build("par-each")
+        Signature::build("each")
             .required("block", SyntaxShape::Block, "the block to run on each row")
             .switch(
                 "numbered",
@@ -127,21 +126,22 @@ fn each(raw_args: CommandArgs, scope: &Scope) -> Result<ValueIterator, ShellErro
     };
 
     let block = Arc::new(block.clone());
-    let scope = scope.clone();
+    let scope = Arc::new(scope.clone());
 
-    Ok(Box::new(PartitionedParallelIterator::new(
-        Box::new(move |input| {
-            let block = block.clone();
-            let context = context.clone();
-            let scope = scope.clone();
+    Ok(Box::new(
+        args.input
+            .map(move |input| {
+                let block = block.clone();
+                let context = context.clone();
+                let scope = scope.clone();
 
-            match process_row(block, context, &scope, input) {
-                Ok(s) => s.collect(),
-                Err(e) => vec![UntaggedValue::Error(e).into_untagged_value()],
-            }
-        }),
-        1,
-        4,
-        args.input,
-    )))
+                match process_row(block, context, &scope, input) {
+                    Ok(s) => s,
+                    Err(e) => Box::new(std::iter::once(
+                        UntaggedValue::Error(e).into_untagged_value(),
+                    )) as ValueIterator,
+                }
+            })
+            .flatten(),
+    ))
 }

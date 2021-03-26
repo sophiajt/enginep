@@ -23,7 +23,7 @@ impl Iterator for InterruptibleIterator {
     type Item = Value;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.next()
+        self.inner.next()
     }
 }
 

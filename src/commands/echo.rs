@@ -72,12 +72,12 @@ fn echo(args: CommandArgs, scope: &Scope) -> Result<ValueIterator, ShellError> {
     Ok(stream)
 }
 
-struct RangeIterator {
-    curr: Primitive,
-    end: Primitive,
-    tag: Tag,
-    is_end_inclusive: bool,
-    moves_up: bool,
+pub struct RangeIterator {
+    pub curr: Primitive,
+    pub end: Primitive,
+    pub tag: Tag,
+    pub is_end_inclusive: bool,
+    pub moves_up: bool,
 }
 
 impl RangeIterator {
@@ -97,7 +97,7 @@ impl RangeIterator {
             curr: start,
             end,
             tag: tag.clone(),
-            is_end_inclusive: matches!(range.to.1, RangeInclusion::Inclusive),
+            is_end_inclusive: false,
         }
     }
 }
@@ -133,7 +133,6 @@ impl Iterator for RangeIterator {
             && (ordering == Ordering::Less || self.is_end_inclusive && ordering == Ordering::Equal)
         {
             let output = UntaggedValue::Primitive(self.curr.clone()).into_value(self.tag.clone());
-
             let next_value = nu_data::value::compute_values(
                 Operator::Plus,
                 &UntaggedValue::Primitive(self.curr.clone()),

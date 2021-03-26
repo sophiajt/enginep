@@ -92,17 +92,23 @@ pub fn autoview(context: RunnableContext, scope: &Scope) -> Result<ValueIterator
     if let Some(x) = input_stream.next() {
         match input_stream.next() {
             Some(y) => {
-                let ctrl_c = context.ctrl_c.clone();
+                let ctrl_c = context.ctrl_c;
                 let xy = vec![x, y];
                 let xy_iter: InterruptibleIterator =
                     xy.into_iter().chain(input_stream).interruptible(ctrl_c);
 
-                if let Some(table) = table {
-                    let command_args =
-                        create_default_command_args(&context).with_input(Box::new(xy_iter));
-                    let result = table.run(command_args, scope)?;
-                    result.collect::<Vec<_>>();
+                for x in xy_iter {
+                    println!("{:?}", x);
                 }
+
+                //let result: Vec<_> = xy_iter.collect();
+                //println!("{:?}", result);
+                // if let Some(table) = table {
+                //     let command_args =
+                //         create_default_command_args(&context).with_input(Box::new(xy_iter));
+                //     let result = table.run(command_args, scope)?;
+                //     result.collect::<Vec<_>>();
+                // }
             }
             _ => {
                 match x {

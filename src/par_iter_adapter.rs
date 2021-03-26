@@ -5,7 +5,7 @@ use nu_protocol::Value;
 use rayon::prelude::*;
 
 pub struct PartitionedParallelIterator {
-    filter_map_fn: Box<dyn Fn(Value) -> Option<Value> + Send + Sync + 'static>,
+    filter_map_fn: Box<dyn Fn(Value) -> Vec<Value> + Send + Sync + 'static>,
     number_per_worker: usize,
     number_of_workers: usize,
     input: ValueIterator,
@@ -15,7 +15,7 @@ pub struct PartitionedParallelIterator {
 
 impl PartitionedParallelIterator {
     pub fn new(
-        filter_map_fn: Box<dyn Fn(Value) -> Option<Value> + Send + Sync + 'static>,
+        filter_map_fn: Box<dyn Fn(Value) -> Vec<Value> + Send + Sync + 'static>,
         number_per_worker: usize,
         number_of_workers: usize,
         input: ValueIterator,
@@ -43,11 +43,9 @@ impl Iterator for PartitionedParallelIterator {
                 for _ in 0..self.number_per_worker {
                     if let Some(x) = self.input.next() {
                         per_worker_data.push(x);
-                    } else {
-                        if !per_worker_data.is_empty() {
-                            dataset.push(per_worker_data);
-                            break 'outer;
-                        }
+                    } else if !per_worker_data.is_empty() {
+                        dataset.push(per_worker_data);
+                        break 'outer;
                     }
                 }
                 dataset.push(per_worker_data);
@@ -58,7 +56,8 @@ impl Iterator for PartitionedParallelIterator {
                 .flat_map_iter(|per_worker_dataset| {
                     let output: Vec<_> = per_worker_dataset
                         .into_iter()
-                        .filter_map(|x| (self.filter_map_fn)(x))
+                        .map(|x| (self.filter_map_fn)(x))
+                        .flatten()
                         .collect();
 
                     output

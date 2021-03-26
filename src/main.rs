@@ -1,7 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::atomic::Ordering};
 
 use enginep::*;
 use nu_errors::ShellError;
+use nu_protocol::{
+    hir::{Call, Expression, SpannedExpression},
+    UntaggedValue, Value,
+};
+use nu_source::{Span, Tag};
 
 fn main() -> Result<(), ShellError> {
     let fname = std::env::args().skip(1).next().unwrap();
@@ -9,17 +14,61 @@ fn main() -> Result<(), ShellError> {
     let scope = Scope::new();
     scope.add_command("let".into(), command(Let));
     scope.add_command("echo".into(), command(Echo));
+    scope.add_command("autoview".into(), command(Autoview));
+    scope.add_command("seq".into(), command(Seq));
+    scope.add_command("each".into(), command(Each));
+    scope.add_command("str to-int".into(), command(StrToInt));
+    scope.add_command("if".into(), command(If));
+    scope.add_command("ansi".into(), command(Ansi));
+    scope.add_command("build-string".into(), command(BuildString));
+    scope.add_command("str collect".into(), command(StrCollect));
+    scope.add_command("def".into(), command(Def));
+    scope.add_command("char".into(), command(Char));
+    scope.add_command("par-each".into(), command(ParEach));
+
     let ctx = EvaluationContext::basic();
 
     let (block, errors) = nu_parser::parse(&file_contents, 0, &scope);
 
-    println!("{:#?}\nERROR:{:?}", block, errors);
+    //println!("{:#?}\nERROR:{:?}", block, errors);
 
     let output = run_block(&block, &ctx, &scope, empty_value_iterator())?;
 
-    let output: Vec<_> = output.collect();
+    // let output: Vec<_> = output.collect();
+    let autoview_cmd = scope
+        .get_command("autoview")
+        .expect("Could not find autoview command");
 
-    println!("output: {:?}", output);
+    if let Ok(mut output_stream) = ctx.run_command(
+        autoview_cmd,
+        Tag::unknown(),
+        Call::new(
+            Box::new(SpannedExpression::new(
+                Expression::string("autoview".to_string()),
+                Span::unknown(),
+            )),
+            Span::unknown(),
+        ),
+        output,
+        &scope,
+    ) {
+        loop {
+            match output_stream.next() {
+                Some(Value {
+                    value: UntaggedValue::Error(e),
+                    ..
+                }) => println!("{:?}", e),
+                Some(_item) => {
+                    if ctx.ctrl_c.load(Ordering::SeqCst) {
+                        break;
+                    }
+                }
+                None => break,
+            }
+        }
+    }
+
+    // println!("output: {:?}", output);
 
     Ok(())
 }

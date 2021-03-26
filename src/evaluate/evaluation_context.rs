@@ -63,7 +63,7 @@ impl EvaluationContext {
         block(&mut *errors)
     }
 
-    pub(crate) fn run_command(
+    pub fn run_command(
         &self,
         command: Command,
         name_tag: Tag,
